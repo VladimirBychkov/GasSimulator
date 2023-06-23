@@ -7,6 +7,8 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/System/Time.hpp>
 
+#include "../multithreading.h"
+
 
 template<typename T>
 class ThreadSafe {
@@ -17,17 +19,6 @@ private:
 public:
     template<typename... Args>
     ThreadSafe(Args&&... args) : t(std::forward<Args>(args)...) {}
-
-    //ThreadSafe(const ThreadSafe& other) {
-    //    std::lock_guard<std::mutex> lock(other.mtx);
-    //    t = other.t;
-    //    //mtx = other.mtx;
-    //}
-    //ThreadSafe& operator=(const ThreadSafe& other) {
-    //    t = other.t;
-    //    //mtx = other.mtx;
-    //    return *this;
-    //}
 
     std::mutex& getMutex() {
         return mtx;
@@ -48,11 +39,7 @@ class Particle {
 private:
     double position;
 public:
-    //Particle() { position = 0; }
     Particle(double pos) : position(pos) {}
-    //Particle(const Particle& other) {
-    //    position = other.position;
-    //}
 
     double getPosition() const {
         return position;
@@ -95,21 +82,23 @@ void read_worker(int num, std::vector<T>& particles, std::vector<double>& data) 
     }
 }
 
+//template<typename T>
+void fill_worker(size_t i_start, size_t i_end, std::vector<float>& data) {
+    for (size_t i = i_start; i < i_end; i++) {
+        data[i] = static_cast<float>(i);
+    }
+}
+
 int main() {
     using SafeParticle = ThreadSafe<Particle>;
-    //SafeParticle particle1(0.0);
-    //SafeParticle particle2(2.0);
-    //
-    //particle1.operate([](Particle& p) { p.setPosition(1.0); });
-    //double position = particle1.operate([](Particle& p) { return p.getPosition(); });
 
     sf::Clock clock;
+
+    /*
     std::vector<SafeParticle*> particles;
     SafeParticle particle(0.0);
-    //std::vector<double> data;
     size_t num{ 1'000'000 };
     particles.reserve(num);
-    //data.reserve(num);
 
     clock.restart();
     for (size_t i = 0; i < num; i++) {
@@ -117,20 +106,12 @@ int main() {
     }
     std::cout << "Init: " << clock.getElapsedTime().asMicroseconds() << std::endl;
     
-    //std::thread t2(read_worker<Particle>, num, std::ref(particles), std::ref(data));
     std::thread t1(swap_worker<SafeParticle*>, num, std::ref(particles));
     std::thread t2(swap_worker<SafeParticle*>, num, std::ref(particles));
-    //swap_worker<SafeParticle*>(num, particles);
     
     t1.join();
     t2.join();
     
-    //clock.restart();
-    //for (size_t i = 0; i < num / 2; i++) {
-    //    swapPositions(particles[i], particles[num - 1 - i]);
-    //}
-    //std::cout << "Swap: " << clock.getElapsedTime().asMicroseconds() << std::endl;
-    //
     int counter{ 0 };
     for (size_t i = 0; i < num; i++) {
         if (particles[i]->getT().getPosition() != i) {
@@ -139,6 +120,18 @@ int main() {
         }
     }
     std::cout << "Incorrectly swaped " << counter << std::endl;
+    */
+
+    std::vector<float> data;
+    //data.reserve(10'000'000);
+    data.resize(10);
+
+    clock.restart();
+    runInMultipleThreads(3, fill_worker, 0, 10, data);
+    std::cout << "Time: " << clock.getElapsedTime().asMicroseconds() << std::endl;
+    
+    std::cout << data[2] << std::endl;
+
 
 	return 0;
 }

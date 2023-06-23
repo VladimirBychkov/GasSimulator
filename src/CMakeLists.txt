@@ -5,7 +5,7 @@ add_executable(gas_simulator
 	GridCell.cpp
 	Grid.cpp
 	utils_math.h
-  "Renderer.h" "Renderer.cpp")
+  "Renderer.h" "Renderer.cpp" "multithreading.h")
 
  add_subdirectory(tests)
 
